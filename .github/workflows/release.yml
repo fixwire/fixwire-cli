@@ -1,0 +1,41 @@
+name: Release
+
+# A v<version> tag (pushed with its GitHub release and notes) builds the
+# binaries for every platform, adds them to the release with their checksums,
+# and publishes the npm packages.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # the release's files
+  id-token: write # npm's trusted publishing and provenance
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: npm packages
+        run: node npm/pack.mjs "${GITHUB_REF_NAME}" dist npm/dist
+      # Needs the @fixwire organization on npm with this repository as each
+      # package's trusted publisher; set the NPM_PUBLISH variable to true then.
+      # Platform packages go first, so @fixwire/cli never names a missing one.
+      - name: publish to npm
+        if: vars.NPM_PUBLISH == 'true'
+        run: for dir in npm/dist/cli-*/ npm/dist/cli/; do npm publish --provenance --access public "$dir"; done

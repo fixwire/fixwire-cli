@@ -1,0 +1,13 @@
+# What builds and releases leave behind
+/fixwire-cli
+/fixwire-cli.exe
+/dist/
+/npm/dist/
+node_modules/
+*.test
+coverage.out
+
+.DS_Store
+.env
+.env.*
+!.env.example

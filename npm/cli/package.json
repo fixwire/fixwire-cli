@@ -1,0 +1,30 @@
+{
+  "name": "@fixwire/cli",
+  "version": "0.0.0",
+  "description": "fixwire-cli: upload source maps and record releases for Fixwire, from your build or CI.",
+  "keywords": [
+    "fixwire",
+    "source-maps",
+    "sourcemaps",
+    "error-monitoring",
+    "cli"
+  ],
+  "homepage": "https://github.com/fixwire/fixwire-cli",
+  "bugs": "https://github.com/fixwire/fixwire-cli/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fixwire/fixwire-cli.git"
+  },
+  "license": "MIT",
+  "bin": {
+    "fixwire-cli": "bin/fixwire-cli.js"
+  },
+  "files": [
+    "bin",
+    "lib"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {}
+}
