@@ -46,7 +46,9 @@ func origin(t *testing.T, file string, line, col int) (string, int, int) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := sourcemap.Parse(file+".map", raw)
+	// No URL: sources stay as the map names them (a Windows path, C:\…,
+	// would read as a URL with the scheme c:).
+	m, err := sourcemap.Parse("", raw)
 	if err != nil {
 		t.Fatal(err)
 	}
