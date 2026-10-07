@@ -5,7 +5,7 @@ import "strings"
 // The Fixwire versions a migrated project depends on. tables_test.go checks
 // them, and the names below, against the SDKs in this repository.
 const (
-	jsVersion = "0.1.2"
+	jsVersion = "0.1.3"
 	pyVersion = "0.1.2"
 )
 
