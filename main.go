@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strings"
 
 	"github.com/fixwire/fixwire-cli/migrate"
@@ -28,8 +29,15 @@ import (
 	"github.com/fixwire/fixwire-cli/sourcemaps"
 )
 
-// version is set at build time.
+// version is set at build time by the release; `go install …@v1.2.3` builds
+// carry their module version instead.
 var version = "dev"
+
+func init() {
+	if info, ok := debug.ReadBuildInfo(); ok && version == "dev" && strings.HasPrefix(info.Main.Version, "v") {
+		version = strings.TrimPrefix(info.Main.Version, "v")
+	}
+}
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
