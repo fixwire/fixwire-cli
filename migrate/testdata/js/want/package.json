@@ -1,0 +1,20 @@
+{
+  "name": "shop",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --import @sentry/node/preload server.js",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@fixwire/node": "^0.1.2",
+    "@fixwire/browser": "^0.1.2",
+    "@fixwire/react": "^0.1.2",
+    "express": "^5.1.0",
+    "react": "^19.1.0"
+  },
+  "devDependencies": {
+    "@sentry/vite-plugin": "^4.0.0",
+    "typescript": "^5.9.0"
+  }
+}

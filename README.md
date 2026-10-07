@@ -23,6 +23,8 @@ build or CI:
   traces.
 - **Releases:** records the commit a release was built from, so the AI
   debugger reads the right source and the diff from the previous release.
+- **Migration:** moves a JavaScript or Python project from another error
+  tracker's SDK to Fixwire's, and lists what's left to do by hand.
 
 It is one static binary with no dependencies.
 
@@ -82,6 +84,28 @@ fixwire-cli releases set-commit --release web@1.4.0
 records the commit at `git rev-parse HEAD` and the repository of the
 `origin` remote; `--commit` and `--repository owner/name` set them
 yourself.
+
+## 🔀 Moving from another error tracker
+
+```sh
+fixwire-cli migrate .            # shows what it would change, and what's left
+fixwire-cli migrate --write .    # changes it
+```
+
+`migrate` moves a JavaScript, TypeScript or Python project from another
+error tracker's SDK to Fixwire's: imports and requires (React's split
+between `@fixwire/browser` and `@fixwire/react`), the few calls whose names
+differ, `package.json`, `requirements.txt`, `pyproject.toml`, `Pipfile` and
+`setup.cfg`. Options and integrations Fixwire doesn't have are removed, so
+the project still type-checks and the SDK starts; Fixwire's Django
+middleware takes the place of the Django integration. Comments and strings
+are never touched, and a second run changes nothing.
+
+It then lists what's left to do by hand, file and line: the DSN and the
+environment variables (`FIXWIRE_DSN`, `FIXWIRE_RELEASE`,
+`FIXWIRE_ENVIRONMENT`), frameworks to wire up yourself, bundler plugins to
+replace with `sourcemaps upload --inject`, and anything Fixwire doesn't do
+(session replay, profiling).
 
 ## 🤖 In CI
 

@@ -1,0 +1,11 @@
+[project]
+name = "shop"
+version = "1.0.0"
+dependencies = [
+  "fastapi>=0.115",
+  "fixwire[async]>=0.1.2",
+]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fixwire = { version = ">=0.1.2", extras = ["async"] }

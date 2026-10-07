@@ -1,8 +1,11 @@
 // Command fixwire-cli prepares and uploads a JavaScript build's source maps
-// so Fixwire shows original code in stack traces.
+// so Fixwire shows original code in stack traces, records the commit a
+// release was built from, and moves a project from another error tracker's
+// SDK to Fixwire's.
 //
 //	fixwire-cli sourcemaps inject dist
 //	fixwire-cli sourcemaps upload dist --release web@1.4.0
+//	fixwire-cli migrate --write .
 //
 // Settings come from flags or the environment: FIXWIRE_URL,
 // FIXWIRE_AUTH_TOKEN (an API key with the artifacts:write scope),
@@ -20,6 +23,7 @@ import (
 	"os/signal"
 	"strings"
 
+	"github.com/fixwire/fixwire-cli/migrate"
 	"github.com/fixwire/fixwire-cli/releases"
 	"github.com/fixwire/fixwire-cli/sourcemaps"
 )
@@ -127,6 +131,36 @@ func commands(env func(string) string) []command {
 			},
 		},
 		{
+			name:  "migrate",
+			usage: "Move a JavaScript or Python project in <dir> from another error tracker's SDK to Fixwire's (--write makes the changes)",
+			run: func(_ context.Context, args []string, out io.Writer) error {
+				fs := flag.NewFlagSet("migrate", flag.ContinueOnError)
+				fs.SetOutput(out)
+				write := fs.Bool("write", false, "make the changes; without it, only show them")
+				if err := fs.Parse(flagsFirst(args)); err != nil {
+					return err
+				}
+				dir := "."
+				switch fs.NArg() {
+				case 0:
+				case 1:
+					dir = fs.Arg(0)
+				default:
+					return errors.New("name one project directory")
+				}
+				if info, err := os.Stat(dir); err != nil {
+					return err
+				} else if !info.IsDir() {
+					return fmt.Errorf("%s is not a directory", dir)
+				}
+				rep, err := migrate.Run(dir, *write)
+				if err != nil {
+					return err
+				}
+				return migrate.Print(out, rep)
+			},
+		},
+		{
 			name:  "releases set-commit",
 			usage: "Record the commit a release was built from (default: git HEAD and the origin remote)",
 			run: func(ctx context.Context, args []string, out io.Writer) error {
@@ -158,6 +192,20 @@ func commands(env func(string) string) []command {
 			},
 		},
 	}
+}
+
+// flagsFirst moves flags before the other arguments, so `migrate . --write`
+// reads like `migrate --write .` (Go's flags stop at the first argument).
+func flagsFirst(args []string) []string {
+	var flags, rest []string
+	for _, a := range args {
+		if strings.HasPrefix(a, "-") {
+			flags = append(flags, a)
+		} else {
+			rest = append(rest, a)
+		}
+	}
+	return append(flags, rest...)
 }
 
 func oneDir(fs *flag.FlagSet) (string, error) {

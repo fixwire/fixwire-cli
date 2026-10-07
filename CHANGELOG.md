@@ -4,7 +4,9 @@ All notable changes to fixwire-cli are listed here. Versions follow
 [Semantic Versioning](https://semver.org); before 1.0, a minor version may
 change the commands.
 
-## [0.1.0] - 2026-10-07
+## [0.1.0] - 2026-10-08
+
+- `migrate [--write] <dir>` moves a JavaScript, TypeScript or Python project from another error tracker's SDK to Fixwire's: imports, renamed calls, options and integrations Fixwire doesn't have, and the dependencies in package.json, requirements files, pyproject.toml, Pipfile and setup.cfg; Django gets Fixwire's middleware. It lists what's left to do by hand, never touches comments or strings, and a second run changes nothing.
 
 - `sourcemaps inject <dir>` stamps each JavaScript file that has a source map, and its map, with a debug id derived from its content; a `"use strict"` prologue or a hashbang stays first and the map's columns move with it.
 - `sourcemaps upload <dir>` sends the files and maps as one deterministic bundle, in chunks the server doesn't have yet, so a second upload of the same build sends nothing; `--inject` stamps first, `--release`, `--dist` and `--url-prefix` match files without debug ids.

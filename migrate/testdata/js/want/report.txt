@@ -1,0 +1,65 @@
+App.tsx
+     1 - import * as Sentry from "@sentry/react";
+       + import * as Sentry from "@fixwire/browser";
+       + import { ErrorBoundary } from "@fixwire/react";
+     6 -   integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
+       +   integrations: [Sentry.browserTracingIntegration()],
+     9 -   replaysSessionSampleRate: 0.1,
+    10 -   replaysOnErrorSampleRate: 1.0,
+    15 -     <Sentry.ErrorBoundary fallback={<p>Something broke.</p>}>
+       +     <ErrorBoundary fallback={<p>Something broke.</p>}>
+    17 -     </Sentry.ErrorBoundary>
+       +     </ErrorBoundary>
+instrument.mjs
+     2 - import * as Sentry from "@sentry/node";
+       + import * as Sentry from "@fixwire/node";
+     3 - import { nodeProfilingIntegration } from "@sentry/profiling-node";
+     8 -   integrations: [nodeProfilingIntegration(), Sentry.httpIntegration()],
+       +   integrations: [],
+    10 -   profilesSampleRate: 1.0,
+named.ts
+     1 - import { captureException, withScope, type Event } from "@sentry/browser";
+       + import { captureException, withScope, type Event } from "@fixwire/browser";
+     2 - import { ErrorBoundary, init } from "@sentry/react";
+       + import { init } from "@fixwire/browser";
+       + import { ErrorBoundary } from "@fixwire/react";
+     9 -   init({ dsn: "", ignoreErrors: ["ResizeObserver loop"] });
+       +   init({ dsn: "" });
+package.json
+    10 -     "@sentry/node": "^9.40.0",
+       +     "@fixwire/node": "^0.1.2",
+    11 -     "@sentry/profiling-node": "^9.40.0",
+    12 -     "@sentry/react": "^9.40.0",
+       +     "@fixwire/browser": "^0.1.2",
+       +     "@fixwire/react": "^0.1.2",
+server.cjs
+     1 - const Sentry = require("@sentry/node");
+       + const Sentry = require("@fixwire/node");
+worker.ts
+     1 - import * as Sentry from "@sentry/cloudflare";
+       + import * as Sentry from "@fixwire/edge";
+     7 - export default Sentry.withSentry(
+       + export default Sentry.withFixwire(
+    11 -     enableLogs: true,
+
+Left to do:
+  App.tsx:5: VITE_SENTRY_DSN: Fixwire reads FIXWIRE_DSN, FIXWIRE_RELEASE or FIXWIRE_ENVIRONMENT; set that instead
+  App.tsx:6: removed the replayIntegration integration: Fixwire doesn't have it (its defaults cover errors, requests and tracing)
+  App.tsx:9: removed the replaysSessionSampleRate option; Fixwire's init doesn't take it: Fixwire has no session replay
+  App.tsx:10: removed the replaysOnErrorSampleRate option; Fixwire's init doesn't take it: Fixwire has no session replay
+  instrument.mjs:3: removed the import of @sentry/profiling-node: Fixwire has no profiling
+  instrument.mjs:6: the DSN is the other service's: use your Fixwire project's DSN (FIXWIRE_DSN)
+  instrument.mjs:7: SENTRY_RELEASE: Fixwire reads FIXWIRE_RELEASE; set that instead
+  instrument.mjs:8: removed the nodeProfilingIntegration integration: Fixwire has no profiling
+  instrument.mjs:8: removed the httpIntegration integration: Fixwire doesn't have it (its defaults cover errors, requests and tracing)
+  instrument.mjs:10: removed the profilesSampleRate option; Fixwire's init doesn't take it: Fixwire has no profiling
+  named.ts:9: removed the ignoreErrors option; Fixwire's init doesn't take it: drop those events in beforeSend instead
+  package.json:1: install the new dependencies with your package manager (npm install, pnpm install, yarn)
+  package.json:6: the start script uses the other SDK: Fixwire's Node SDK needs no preload flags, and fixwire-cli uploads source maps
+  package.json:11: removed @sentry/profiling-node from dependencies: Fixwire has no profiling
+  package.json:17: @sentry/vite-plugin: remove the bundler plugin and upload source maps in CI with `fixwire-cli sourcemaps upload --inject <dir>`
+  worker.ts:4: SENTRY_DSN: Fixwire reads FIXWIRE_DSN; set that instead
+  worker.ts:9: SENTRY_DSN: Fixwire reads FIXWIRE_DSN; set that instead
+  worker.ts:11: removed the enableLogs option; Fixwire's init doesn't take it: send logs with OpenTelemetry's OTLP exporter (otlpExporterOptions)
+
+changed 18 places in 6 files; 18 steps left.

@@ -1,0 +1,47 @@
+app.py
+     3 - import sentry_sdk as sdk
+       + import fixwire as sdk
+     4 - from sentry_sdk import capture_exception
+       + from fixwire import capture_exception
+     5 - from sentry_sdk.crons import capture_checkin
+       + from fixwire import capture_check_in as capture_checkin
+     6 - from sentry_sdk.integrations.fastapi import FastApiIntegration
+    10 -     integrations=[FastApiIntegration()],
+       +     integrations=[],
+    11 -     enable_tracing=True,
+    24 -     capture_checkin(monitor_slug="nightly-report", status="ok")
+       +     capture_checkin(monitor="nightly-report", status="ok")
+pyproject.toml
+     6 -   "sentry-sdk[fastapi]>=2.0",
+       +   "fixwire[async]>=0.1.2",
+    11 - sentry-sdk = { version = "^2.0", extras = ["fastapi"] }
+       + fixwire = { version = ">=0.1.2", extras = ["async"] }
+requirements.txt
+     2 - sentry-sdk[django]==2.39.0  # errors and tracing
+       + fixwire>=0.1.2  # errors and tracing
+settings.py
+     3 - import sentry_sdk
+       + import fixwire
+     4 - from sentry_sdk.integrations.django import DjangoIntegration
+     5 - from sentry_sdk.integrations.celery import CeleryIntegration
+       + from fixwire.integrations.celery import CeleryIntegration
+     8 -     "django.middleware.security.SecurityMiddleware",
+       +     "fixwire.integrations.django.FixwireMiddleware",
+       +     "django.middleware.security.SecurityMiddleware",
+    12 - sentry_sdk.init(
+       + fixwire.init(
+    14 -     integrations=[DjangoIntegration(), CeleryIntegration(monitor_beat_tasks=True)],
+       +     integrations=[CeleryIntegration()],
+    16 -     profiles_sample_rate=0.1,
+
+Left to do:
+  .env.example:1: SENTRY_DSN: Fixwire reads FIXWIRE_DSN; set it to your Fixwire project's value
+  app.py:6: removed the fastapi integration: add the ASGI middleware: app.add_middleware(fixwire.integrations.asgi.FixwireMiddleware)
+  app.py:9: the DSN is the other service's: use your Fixwire project's DSN (FIXWIRE_DSN)
+  app.py:11: removed the enable_tracing option; fixwire.init doesn't take it (it would turn the SDK off): set traces_sample_rate instead
+  app.py:25: sdk.push_scope isn't in fixwire: use `with fixwire.new_scope() as scope`
+  settings.py:13: SENTRY_DSN: Fixwire reads FIXWIRE_DSN; set that instead
+  settings.py:14: removed monitor_beat_tasks from CeleryIntegration(): Fixwire's takes none
+  settings.py:16: removed the profiles_sample_rate option; fixwire.init doesn't take it (it would turn the SDK off): Fixwire has no profiling
+
+changed 16 places in 5 files; 8 steps left.
