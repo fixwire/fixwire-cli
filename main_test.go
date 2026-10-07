@@ -84,3 +84,43 @@ func TestMigrate(t *testing.T) {
 		t.Fatalf("after --write:\n%s", b)
 	}
 }
+
+// --delete removes the source maps once they're uploaded, and nothing else.
+func TestUploadDeletesTheMaps(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/0/organizations/-/chunk-upload/", func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"url": "http://" + r.Host + "/api/0/organizations/-/chunk-upload/",
+			"chunkSize": 1 << 20, "chunksPerRequest": 4, "maxRequestSize": 32 << 20, "accept": []string{"artifact_bundles"}})
+	})
+	mux.HandleFunc("POST /api/0/organizations/-/artifactbundle/assemble/", func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"state": "ok"})
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "chunks"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	files := map[string]string{
+		"chunks/app.js":     "a()\n//# sourceMappingURL=app.js.map\n",
+		"chunks/app.js.map": `{"version":3,"sources":["app.ts"],"names":[],"mappings":"AAAA"}`,
+		"chunks/data.map":   "not a source map",
+	}
+	for name, body := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var out bytes.Buffer
+	if err := run(context.Background(), []string{"sourcemaps", "upload", "--inject", "--delete", dir}, &out, env(srv.URL)); err != nil {
+		t.Fatalf("%v: %s", err, out.String())
+	}
+	for name, kept := range map[string]bool{"chunks/app.js": true, "chunks/app.js.map": false, "chunks/data.map": true} {
+		if _, err := os.Stat(filepath.Join(dir, name)); (err == nil) != kept {
+			t.Errorf("%s: kept = %v, want %v", name, err == nil, kept)
+		}
+	}
+	if !strings.Contains(out.String(), "deleted 1 source maps") {
+		t.Errorf("output:\n%s", out.String())
+	}
+}

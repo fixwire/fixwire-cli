@@ -4,6 +4,10 @@ All notable changes to fixwire-cli are listed here. Versions follow
 [Semantic Versioning](https://semver.org); before 1.0, a minor version may
 change the commands.
 
+## [Unreleased]
+
+- `sourcemaps upload --delete` removes the source maps once they're uploaded, so they aren't deployed with the build.
+
 ## [0.1.0] - 2026-10-08
 
 - `migrate [--write] <dir>` moves a JavaScript, TypeScript or Python project from another error tracker's SDK to Fixwire's: imports, renamed calls, options and integrations Fixwire doesn't have, and the dependencies in package.json, requirements files, pyproject.toml, Pipfile and setup.cfg; Django gets Fixwire's middleware. It lists what's left to do by hand, never touches comments or strings, and a second run changes nothing.

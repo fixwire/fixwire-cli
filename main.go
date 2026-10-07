@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime/debug"
 	"strings"
 
@@ -108,6 +109,7 @@ func commands(env func(string) string) []command {
 				fs.StringVar(&o.Dist, "dist", "", "distribution within the release")
 				fs.StringVar(&o.URLPrefix, "url-prefix", "~/", "URL the directory is served under; ~/ matches any host")
 				inject := fs.Bool("inject", false, "stamp debug ids first")
+				del := fs.Bool("delete", false, "remove the source maps once uploaded, so they aren't deployed")
 				if err := fs.Parse(args); err != nil {
 					return err
 				}
@@ -134,6 +136,14 @@ func commands(env func(string) string) []command {
 					res.Files, res.DebugIDs, res.Bytes>>10, res.Checksum[:12], res.Uploaded)
 				if res.DebugIDs == 0 && o.Release == "" {
 					_, _ = fmt.Fprintln(out, "warning: no debug ids and no --release: run `fixwire-cli sourcemaps inject` before deploying, or pass --release")
+				}
+				if *del {
+					for _, m := range res.Maps {
+						if err := os.Remove(filepath.Join(dir, filepath.FromSlash(m))); err != nil {
+							return err
+						}
+					}
+					_, _ = fmt.Fprintf(out, "deleted %d source maps\n", len(res.Maps))
 				}
 				return nil
 			},

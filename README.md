@@ -70,7 +70,9 @@ traces find their maps whatever the URL or the release.
 
 `upload` sends every file and map in the directory as one bundle. A file
 already uploaded isn't sent again, so uploading the same build twice sends
-nothing. `--inject` stamps the files first. Without debug ids, pass
+nothing. `--inject` stamps the files first, and `--delete` removes the
+maps once they're uploaded, so they aren't deployed with the build (Next.js
+serves whatever is in `.next/static`). Without debug ids, pass
 `--release` (and `--dist`): frames are then matched by release and URL,
 with `--url-prefix` the path the directory is served under (default `~/`,
 any host).

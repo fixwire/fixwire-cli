@@ -57,6 +57,9 @@ type Result struct {
 	Checksum string
 	// Uploaded is the chunks sent; zero when the server had them all.
 	Uploaded int
+	// Maps are the source maps in the bundle, relative to its directory
+	// (slash-separated).
+	Maps []string
 }
 
 // chunkOptions is the server's answer to GET chunk-upload.
@@ -241,6 +244,7 @@ func Bundle(dir string, o Options) ([]byte, Result, error) {
 				continue // not a source map
 			}
 			id = cmp.Or(m.DebugID, m.DebugID2)
+			res.Maps = append(res.Maps, f.rel)
 		} else {
 			e.Type = "minified_source"
 			if m := debugIDComment.FindSubmatch(f.data); m != nil {
