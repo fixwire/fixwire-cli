@@ -88,6 +88,9 @@ func commands(env func(string) string) []command {
 						state = "already injected"
 					}
 					_, _ = fmt.Fprintf(out, "%s  %s (%s)\n", f.DebugID, f.File, state)
+					for _, r := range f.Removed {
+						_, _ = fmt.Fprintf(out, "removed %s: out of date\n", r)
+					}
 				}
 				_, _ = fmt.Fprintf(out, "%d files with source maps\n", len(files))
 				return nil

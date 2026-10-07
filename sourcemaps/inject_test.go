@@ -1,7 +1,10 @@
 package sourcemaps
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -215,5 +218,45 @@ func TestInjectStaysInsideTheBuild(t *testing.T) {
 	}
 	if len(files) != 0 || mustRead(t, outside) != config || mustRead(t, lib) != "lib()\n" {
 		t.Fatalf("injected %v; outside the build: %q, %q", files, mustRead(t, outside), mustRead(t, lib))
+	}
+}
+
+// A build's precompressed copies follow the stamped file: servers such as
+// SvelteKit's adapter-node send them in its place.
+func TestInjectRefreshesCompressedCopies(t *testing.T) {
+	dir := t.TempDir()
+	app := writeBuild(t, dir, "app.js", `function a(b){if(!b)throw new Error("missing")}`, 0, 14)
+	old, _ := os.ReadFile(app)
+	var gz bytes.Buffer
+	w := gzip.NewWriter(&gz)
+	_, _ = w.Write(old)
+	_ = w.Close()
+	for name, body := range map[string][]byte{"app.js.gz": gz.Bytes(), "app.js.br": []byte("stale brotli")} {
+		if err := os.WriteFile(filepath.Join(dir, name), body, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	files, err := Inject(dir)
+	if err != nil || len(files) != 1 {
+		t.Fatalf("inject = %+v, %v", files, err)
+	}
+	if len(files[0].Removed) != 1 || filepath.Base(files[0].Removed[0]) != "app.js.br" {
+		t.Errorf("removed = %v", files[0].Removed)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "app.js.br")); !os.IsNotExist(err) {
+		t.Error("the out-of-date brotli copy is still there")
+	}
+	f, err := os.Open(filepath.Join(dir, "app.js.gz"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	r, err := gzip.NewReader(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	unzipped, _ := io.ReadAll(r)
+	if stamped := mustRead(t, app); string(unzipped) != stamped || !strings.Contains(stamped, "debugId=") {
+		t.Errorf("the gzip copy isn't the stamped file:\n%.200s", unzipped)
 	}
 }

@@ -64,7 +64,10 @@ fixwire-cli sourcemaps upload dist
 
 `inject` gives each built file that has a source map a debug id derived
 from its content, in the file and in its map (a `"use strict"` prologue or
-a hashbang stays first, and the map's columns move with it). Fixwire's
+a hashbang stays first, and the map's columns move with it). A precompressed
+copy of a file it stamps is kept in step: `<file>.gz` is rewritten and
+`<file>.br` removed, so servers that send them (SvelteKit's adapter-node)
+don't send the old code. Fixwire's
 browser and Node SDKs report the debug ids with every error, so stack
 traces find their maps whatever the URL or the release.
 

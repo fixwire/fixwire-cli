@@ -6,6 +6,7 @@ package sourcemaps
 
 import (
 	"bytes"
+	"compress/gzip"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
@@ -43,6 +44,8 @@ type Injected struct {
 	DebugID uuid.UUID
 	// Already is true for a file stamped by an earlier run.
 	Already bool
+	// Removed are precompressed copies of the file that went out of date.
+	Removed []string
 }
 
 // Inject stamps every JavaScript file under dir that has a source map
@@ -156,7 +159,40 @@ func injectFile(root, file string) (Injected, bool, error) {
 	if err := os.WriteFile(file, b.Bytes(), info.Mode().Perm()); err != nil {
 		return Injected{}, false, err
 	}
-	return Injected{File: file, Map: mapPath, DebugID: id}, true, nil
+	removed, err := refreshCompressed(file, b.Bytes(), info.Mode().Perm())
+	if err != nil {
+		return Injected{}, false, err
+	}
+	return Injected{File: file, Map: mapPath, DebugID: id, Removed: removed}, true, nil
+}
+
+// refreshCompressed keeps the precompressed copies a build made of a file
+// (SvelteKit's adapter-node, a CDN's preset) in step with it, as servers
+// send them in its place: <file>.gz is rewritten, and <file>.br removed,
+// as Go has no brotli encoder of its own; servers fall back to the gzip
+// copy or the file. Only regular files are touched. Returns what it removed.
+func refreshCompressed(file string, data []byte, perm fs.FileMode) ([]string, error) {
+	var removed []string
+	if info, err := os.Lstat(file + ".gz"); err == nil && info.Mode().IsRegular() {
+		var b bytes.Buffer
+		w, _ := gzip.NewWriterLevel(&b, gzip.BestCompression)
+		if _, err := w.Write(data); err != nil {
+			return nil, err
+		}
+		if err := w.Close(); err != nil {
+			return nil, err
+		}
+		if err := os.WriteFile(file+".gz", b.Bytes(), perm); err != nil {
+			return nil, err
+		}
+	}
+	if info, err := os.Lstat(file + ".br"); err == nil && info.Mode().IsRegular() {
+		if err := os.Remove(file + ".br"); err != nil {
+			return nil, err
+		}
+		removed = append(removed, file+".br")
+	}
+	return removed, nil
 }
 
 // debugIDFor derives a stable debug id (a version 4 UUID layout) from a
