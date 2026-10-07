@@ -49,4 +49,4 @@ jobs:
         if: vars.PUBLISH == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: for dir in npm/dist/cli-*/ npm/dist/cli/; do npm publish --provenance --access public "$dir"; done
+        run: for dir in ./npm/dist/cli-*/ ./npm/dist/cli/; do npm publish --provenance --access public "$dir"; done
