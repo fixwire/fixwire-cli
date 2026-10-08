@@ -2,7 +2,7 @@
 
 _Bugs reach production. Fixwire finds them first: errors, traces, logs and
 AI agent runs in one place, an AI debugger on every plan, and your data
-kept in Europe._
+kept in the region you choose._
 
 [![Release](https://img.shields.io/github/v/release/fixwire/fixwire-cli?label=release)](https://github.com/fixwire/fixwire-cli/releases)
 [![npm](https://img.shields.io/npm/v/@fixwire/cli?label=npm)](https://www.npmjs.com/package/@fixwire/cli)
