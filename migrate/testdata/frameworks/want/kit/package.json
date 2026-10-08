@@ -1,0 +1,9 @@
+{
+  "name": "kit-shop",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@fixwire/sveltekit": "^0.1.3",
+    "@sveltejs/kit": "^2.40.0"
+  }
+}

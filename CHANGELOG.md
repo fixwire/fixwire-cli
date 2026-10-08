@@ -6,6 +6,7 @@ change the commands.
 
 ## [Unreleased]
 
+- `migrate` moves projects on the other tracker's Next.js, Vue, SvelteKit and Angular packages to `@fixwire/nextjs`, `@fixwire/vue`, `@fixwire/sveltekit` and `@fixwire/angular` (its Svelte package to `@fixwire/browser`), renames the Next.js config wrapper, the router transition hook, SvelteKit's `handleError` wrapper, `handle` hook and Vite plugin, and says what changed where a call takes less (the config wrapper's second argument, the Vite plugin's upload options, Angular's report dialog) and what replaces what Fixwire lacks (Angular's `TraceService`: `provideFixwire()`). Nuxt gets precise steps: the module, the config files, the DSN. Environment variables keep a framework's public prefix (`NEXT_PUBLIC_FIXWIRE_DSN`, `VITE_FIXWIRE_DSN`).
 - `sourcemaps upload --delete` removes the source maps once they're uploaded, so they aren't deployed with the build.
 - `sourcemaps inject` keeps a build's precompressed copies in step with the files it stamps, as servers send them in their place (SvelteKit's adapter-node does): `<file>.gz` is rewritten, and `<file>.br` removed, since there is no brotli encoder in the standard library; servers fall back to the gzip copy.
 - `sourcemaps inject` adds the snippet that reports a debug id at run time to files whose bundler already wrote one (esbuild in Angular's builder, Rollup's `sourcemapDebugIds`), keeping the bundler's id; such files were taken for stamped ones, and their errors arrived without debug ids.

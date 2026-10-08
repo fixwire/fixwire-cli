@@ -1,0 +1,9 @@
+{
+  "name": "ng-shop",
+  "private": true,
+  "dependencies": {
+    "@angular/core": "^20.0.0",
+    "@angular/router": "^20.0.0",
+    "@sentry/angular": "^10.20.0"
+  }
+}

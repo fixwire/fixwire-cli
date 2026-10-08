@@ -43,7 +43,7 @@ worker.ts
     11 -     enableLogs: true,
 
 Left to do:
-  App.tsx:5: VITE_SENTRY_DSN: Fixwire reads FIXWIRE_DSN, FIXWIRE_RELEASE or FIXWIRE_ENVIRONMENT; set that instead
+  App.tsx:5: VITE_SENTRY_DSN: Fixwire reads VITE_FIXWIRE_DSN; set that instead
   App.tsx:6: removed the replayIntegration integration: Fixwire doesn't have it (its defaults cover errors, requests and tracing)
   App.tsx:9: removed the replaysSessionSampleRate option; Fixwire's init doesn't take it: Fixwire has no session replay
   App.tsx:10: removed the replaysOnErrorSampleRate option; Fixwire's init doesn't take it: Fixwire has no session replay

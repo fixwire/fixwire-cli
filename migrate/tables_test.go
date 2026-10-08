@@ -66,9 +66,17 @@ func jsNames(t *testing.T, pkg, file string, seen map[string]bool) map[string]bo
 	return names
 }
 
+// jsTypes are the modules that describe a package whose bundlers pick an
+// entry per runtime: what its types entry says it has.
+var jsTypes = map[string]string{"@fixwire/nextjs": "universal.ts", "@fixwire/sveltekit": "universal.ts"}
+
 func TestJSNamesAreFixwires(t *testing.T) {
 	for pkg, names := range jsExports {
-		exported := jsNames(t, strings.TrimPrefix(pkg, "@fixwire/"), "index.ts", map[string]bool{})
+		entry := jsTypes[pkg]
+		if entry == "" {
+			entry = "index.ts"
+		}
+		exported := jsNames(t, strings.TrimPrefix(pkg, "@fixwire/"), entry, map[string]bool{})
 		for n := range names {
 			if !exported[n] {
 				t.Errorf("%s doesn't export %s", pkg, n)
@@ -76,7 +84,11 @@ func TestJSNamesAreFixwires(t *testing.T) {
 		}
 	}
 	for _, to := range jsRenamed {
-		if !jsExports["@fixwire/edge"][to] && !jsExports["@fixwire/node"][to] {
+		found := false
+		for _, names := range jsExports {
+			found = found || names[to]
+		}
+		if !found {
 			t.Errorf("%s is no Fixwire name", to)
 		}
 	}
@@ -111,6 +123,24 @@ func TestJSOptionsAreFixwires(t *testing.T) {
 		sameNames(t, pkg+" options", jsOptions[pkg], want)
 	}
 	sameNames(t, "@fixwire/core options", jsOptions["@fixwire/core"], client)
+
+	// The framework packages' init takes the SDKs' options they build on.
+	fields := func(files ...[2]string) []string {
+		out := append([]string{}, client...)
+		for _, f := range files {
+			out = append(out, interfaceFields(t, f[0], f[1])...)
+		}
+		return out
+	}
+	browser := [2]string{"js/packages/browser/src/index.ts", "BrowserOptions"}
+	node := [2]string{"js/packages/node/src/index.ts", "NodeOptions"}
+	edge := [2]string{"js/packages/edge/src/index.ts", "EdgeOptions"}
+	sameNames(t, "@fixwire/nextjs options", jsOptions["@fixwire/nextjs"], fields(browser, node, edge))
+	sameNames(t, "@fixwire/sveltekit options", jsOptions["@fixwire/sveltekit"], fields(browser, node))
+	sameNames(t, "@fixwire/angular options", jsOptions["@fixwire/angular"], fields(browser))
+	sameNames(t, "@fixwire/vue options", jsOptions["@fixwire/vue"], fields(browser,
+		[2]string{"js/packages/vue/src/index.ts", "VueOptions"},
+		[2]string{"js/packages/vue/src/errorhandler.ts", "ErrorHandlerOptions"}))
 }
 
 func TestPythonNamesAreFixwires(t *testing.T) {

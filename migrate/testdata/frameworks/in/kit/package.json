@@ -1,0 +1,9 @@
+{
+  "name": "kit-shop",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@sentry/sveltekit": "^10.20.0",
+    "@sveltejs/kit": "^2.40.0"
+  }
+}

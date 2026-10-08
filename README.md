@@ -99,8 +99,10 @@ fixwire-cli migrate --write .    # changes it
 
 `migrate` moves a JavaScript, TypeScript or Python project from another
 error tracker's SDK to Fixwire's: imports and requires (React's split
-between `@fixwire/browser` and `@fixwire/react`), the few calls whose names
-differ, `package.json`, `requirements.txt`, `pyproject.toml`, `Pipfile` and
+between `@fixwire/browser` and `@fixwire/react`; Next.js, Vue, SvelteKit
+and Angular to their Fixwire packages), the few calls whose names differ
+(the Next.js config wrapper, SvelteKit's hooks and Vite plugin),
+`package.json`, `requirements.txt`, `pyproject.toml`, `Pipfile` and
 `setup.cfg`. Options and integrations Fixwire doesn't have are removed, so
 the project still type-checks and the SDK starts; Fixwire's Django
 middleware takes the place of the Django integration. Comments and strings
@@ -108,7 +110,8 @@ are never touched, and a second run changes nothing.
 
 It then lists what's left to do by hand, file and line: the DSN and the
 environment variables (`FIXWIRE_DSN`, `FIXWIRE_RELEASE`,
-`FIXWIRE_ENVIRONMENT`), frameworks to wire up yourself, bundler plugins to
+`FIXWIRE_ENVIRONMENT`, with a framework's public prefix kept), Nuxt's
+module and config files, other frameworks to wire up yourself, bundler plugins to
 replace with `sourcemaps upload --inject`, and anything Fixwire doesn't do
 (session replay, profiling).
 

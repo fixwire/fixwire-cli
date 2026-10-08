@@ -15,7 +15,7 @@ var update = flag.Bool("update", false, "rewrite testdata/*/want with what migra
 // result, and the report, with testdata/<name>/want. A second run must
 // change nothing.
 func TestGolden(t *testing.T) {
-	for _, name := range []string{"js", "python"} {
+	for _, name := range []string{"js", "frameworks", "python"} {
 		t.Run(name, func(t *testing.T) {
 			work := t.TempDir()
 			copyTree(t, filepath.Join("testdata", name, "in"), work)

@@ -13,7 +13,7 @@ const (
 
 // jsTarget is the Fixwire package an incumbent package becomes. React's is
 // split: its three React parts come from @fixwire/react, the rest (init,
-// capture…) from @fixwire/browser.
+// capture…) from @fixwire/browser. Svelte's is the browser SDK's.
 type jsTarget struct {
 	pkg   string
 	react bool
@@ -28,6 +28,11 @@ var jsPackages = map[string]jsTarget{
 	"@sentry/core":           {pkg: "@fixwire/core"},
 	"@sentry/cloudflare":     {pkg: "@fixwire/edge"},
 	"@sentry/vercel-edge":    {pkg: "@fixwire/edge"},
+	"@sentry/nextjs":         {pkg: "@fixwire/nextjs"},
+	"@sentry/vue":            {pkg: "@fixwire/vue"},
+	"@sentry/sveltekit":      {pkg: "@fixwire/sveltekit"},
+	"@sentry/angular":        {pkg: "@fixwire/angular"},
+	"@sentry/svelte":         {pkg: "@fixwire/browser"},
 }
 
 // jsReactExports are @fixwire/react's names.
@@ -43,12 +48,7 @@ var jsDropped = map[string]string{
 
 // jsByHand are incumbent packages a person moves: why, and how.
 var jsByHand = map[string]string{
-	"@sentry/nextjs":                  "Next.js: use @fixwire/node in instrumentation.ts (export onRequestError = captureRequestError) and @fixwire/browser in the client; upload source maps with `fixwire-cli sourcemaps upload --inject` instead of the config wrapper",
-	"@sentry/nuxt":                    "Nuxt: use @fixwire/browser in a client plugin and @fixwire/node on the server",
-	"@sentry/vue":                     "Vue: use @fixwire/browser, and report from app.config.errorHandler with captureException",
-	"@sentry/angular":                 "Angular: use @fixwire/browser, and report from an ErrorHandler with captureException",
-	"@sentry/svelte":                  "Svelte: use @fixwire/browser",
-	"@sentry/sveltekit":               "SvelteKit: use @fixwire/browser in hooks.client and @fixwire/node in hooks.server (handleError)",
+	"@sentry/nuxt":                    "Nuxt: depend on @fixwire/nuxt and put '@fixwire/nuxt' in nuxt.config's modules in place of '@sentry/nuxt/module'; the options sentry.client.config and sentry.server.config pass to init go in fixwire.client.config and fixwire.server.config as `export default { … }`, the DSN in nuxt.config's fixwire.dsn or NUXT_PUBLIC_FIXWIRE_DSN; in code, import from @fixwire/vue in the app and @fixwire/node on the server",
 	"@sentry/remix":                   "Remix: use @fixwire/browser on the client and @fixwire/node on the server",
 	"@sentry/astro":                   "Astro: use @fixwire/browser and @fixwire/node",
 	"@sentry/solid":                   "Solid: use @fixwire/browser",
@@ -70,7 +70,29 @@ var jsByHand = map[string]string{
 
 // jsRenamed are the incumbent's names Fixwire calls otherwise.
 var jsRenamed = map[string]string{
-	"withSentry": "withFixwire",
+	"withSentry":                   "withFixwire",
+	"withSentryConfig":             "withFixwireConfig",
+	"captureRouterTransitionStart": "onRouterTransitionStart",
+	"handleErrorWithSentry":        "handleErrorWithFixwire",
+	"sentryHandle":                 "fixwireHandle",
+	"sentrySvelteKit":              "fixwireSvelteKit",
+}
+
+// jsNotes say how a Fixwire name is used where the incumbent's took more:
+// a step where a file first uses it.
+var jsNotes = map[string]string{
+	"withFixwireConfig":  "withFixwireConfig takes the Next.js config alone: drop its second argument, and upload source maps after the build with `fixwire-cli sourcemaps upload --inject --delete .next/static`",
+	"fixwireSvelteKit":   "fixwireSvelteKit stamps the client build with debug ids and takes { debugIds }: drop the upload options, and upload source maps after the build with `fixwire-cli sourcemaps upload --delete build/client`",
+	"createErrorHandler": "createErrorHandler takes { logErrors } (Fixwire has no report dialog); provideFixwire() in the app's providers gives the ErrorHandler and names pages after the Router's routes",
+}
+
+// jsMissing say what replaces an incumbent name Fixwire doesn't have.
+var jsMissing = map[string]string{
+	"TraceService":             "provideFixwire() in the app's providers names pages and navigations after the Router's routes; drop the TraceService provider and its initializer",
+	"TraceModule":              "provideFixwire() in the app's providers names pages and navigations after the Router's routes",
+	"TraceDirective":           "drop it; Fixwire doesn't trace components",
+	"withProfiler":             "drop it; Fixwire doesn't trace components",
+	"vueRouterInstrumentation": "pass the router to browserTracingIntegration({ router }), or to init",
 }
 
 // jsExports are each Fixwire package's names (core's are in every other but
@@ -91,17 +113,38 @@ var jsCore = set(
 	"Event", "Breadcrumb", "User", "Integration", "SeverityLevel",
 )
 
+var jsBrowser = union(jsCore, set("breadcrumbsIntegration", "browserPlatform", "browserTracingIntegration",
+	"defaultStackParser", "globalHandlersIntegration", "init", "makeFetchTransport", "noiseFilter", "BrowserOptions"))
+
+var jsNode = union(jsCore, set("captureRequestError", "defaultIntegrations", "expressErrorHandler",
+	"fetchIntegration", "httpClientIntegration", "httpServerIntegration", "init", "makeFileSpool", "nodePlatform",
+	"onUncaughtExceptionIntegration", "onUnhandledRejectionIntegration", "requestInfo", "safeHeaders",
+	"setupExpressErrorHandler", "wrapHandler", "NodeOptions"))
+
+// jsUniversal are the browser SDK's names the one-import packages
+// (@fixwire/nextjs, @fixwire/sveltekit) add to the Node.js SDK's.
+var jsUniversal = set("breadcrumbsIntegration", "browserTracingIntegration", "globalHandlersIntegration",
+	"makeFetchTransport", "noiseFilter", "BrowserOptions", "BrowserTracingOptions")
+
 var jsExports = map[string]map[string]bool{
-	"@fixwire/core": jsCore,
-	"@fixwire/browser": union(jsCore, set("breadcrumbsIntegration", "browserPlatform", "browserTracingIntegration",
-		"defaultStackParser", "globalHandlersIntegration", "init", "makeFetchTransport", "noiseFilter", "BrowserOptions")),
-	"@fixwire/node": union(jsCore, set("captureRequestError", "defaultIntegrations", "expressErrorHandler",
-		"fetchIntegration", "httpClientIntegration", "httpServerIntegration", "init", "makeFileSpool", "nodePlatform",
-		"onUncaughtExceptionIntegration", "onUnhandledRejectionIntegration", "requestInfo", "safeHeaders",
-		"setupExpressErrorHandler", "wrapHandler", "NodeOptions")),
+	"@fixwire/core":    jsCore,
+	"@fixwire/browser": jsBrowser,
+	"@fixwire/node":    jsNode,
 	"@fixwire/edge": union(jsCore, set("edgePlatform", "fetchIntegration", "init", "makeEdgeTransport", "withFixwire",
 		"wrapRequestHandler", "EdgeOptions")),
 	"@fixwire/react": jsReactExports,
+	// The framework packages: their own names, and the SDKs' they re-export.
+	"@fixwire/nextjs": union(jsNode, jsUniversal, set("onRouterTransitionStart", "useCaptureException",
+		"withFixwireConfig", "EdgeOptions", "NextErrorContext", "NextRequestInfo", "NextjsOptions")),
+	"@fixwire/vue": union(jsBrowser, set("attachErrorHandler", "captureVueError", "componentName",
+		"instrumentRouter", "routeName", "ErrorHandlerOptions", "RouteLike", "RouterLike", "VueOptions",
+		"VueTracingOptions")),
+	"@fixwire/sveltekit": union(jsNode, jsUniversal, set("fixwireHandle", "fixwireSvelteKit",
+		"handleErrorWithFixwire", "trackNavigation", "EventLike", "FixwireSvelteKitOptions", "HandleErrorInput",
+		"HandleInput", "NavigationLike", "SvelteKitOptions")),
+	"@fixwire/angular": union(jsBrowser, set("createErrorHandler", "FixwireErrorHandler", "httpErrorResponses",
+		"instrumentRouter", "provideFixwire", "routeName", "ErrorHandlerOptions", "RouteSnapshotLike",
+		"ViewErrorDetails")),
 }
 
 // jsOptions are the options Fixwire's init takes, per package; the others
@@ -112,10 +155,14 @@ var jsClientOptions = set("dsn", "release", "environment", "dist", "serverName",
 	"tracesSampleRate", "tracesSampler", "tracePropagationTargets", "recordAiContent", "autoSessionTracking")
 
 var jsOptions = map[string]map[string]bool{
-	"@fixwire/core":    jsClientOptions,
-	"@fixwire/browser": union(jsClientOptions, set("filterNoise")),
-	"@fixwire/node":    union(jsClientOptions, set("useEnvironment")),
-	"@fixwire/edge":    union(jsClientOptions, set("useEnvironment", "asyncLocalStorage")),
+	"@fixwire/core":      jsClientOptions,
+	"@fixwire/browser":   union(jsClientOptions, set("filterNoise")),
+	"@fixwire/node":      union(jsClientOptions, set("useEnvironment")),
+	"@fixwire/edge":      union(jsClientOptions, set("useEnvironment", "asyncLocalStorage")),
+	"@fixwire/nextjs":    union(jsClientOptions, set("filterNoise", "useEnvironment", "asyncLocalStorage")),
+	"@fixwire/vue":       union(jsClientOptions, set("filterNoise", "app", "router", "logErrors", "attachProps")),
+	"@fixwire/sveltekit": union(jsClientOptions, set("filterNoise", "useEnvironment")),
+	"@fixwire/angular":   union(jsClientOptions, set("filterNoise")),
 }
 
 // jsOptionNotes say what became of an option Fixwire doesn't take.
@@ -137,6 +184,8 @@ var jsOptionNotes = map[string]string{
 	"normalizeDepth":           "",
 	"attachStacktrace":         "",
 	"initialScope":             "set them after init with setUser, setTag and setContext",
+	"trackComponents":          "Fixwire reports Vue's errors with their component, and doesn't trace components",
+	"tracingOptions":           "Fixwire reports Vue's errors with their component, and doesn't trace components",
 }
 
 // --- Python ----------------------------------------------------------------
@@ -227,13 +276,12 @@ func set(names ...string) map[string]bool {
 	return m
 }
 
-func union(a, b map[string]bool) map[string]bool {
-	m := make(map[string]bool, len(a)+len(b))
-	for k := range a {
-		m[k] = true
-	}
-	for k := range b {
-		m[k] = true
+func union(sets ...map[string]bool) map[string]bool {
+	m := map[string]bool{}
+	for _, s := range sets {
+		for k := range s {
+			m[k] = true
+		}
 	}
 	return m
 }

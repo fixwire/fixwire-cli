@@ -1,0 +1,64 @@
+angular/package.json
+     7 -     "@sentry/angular": "^10.20.0"
+       +     "@fixwire/angular": "^0.1.3"
+angular/src/app/app.config.ts
+     3 - import * as Sentry from "@sentry/angular";
+       + import * as Sentry from "@fixwire/angular";
+kit/package.json
+     6 -     "@sentry/sveltekit": "^10.20.0",
+       +     "@fixwire/sveltekit": "^0.1.3",
+kit/src/hooks.server.ts
+     1 - import * as Sentry from "@sentry/sveltekit";
+       + import * as Sentry from "@fixwire/sveltekit";
+     6 - export const handle = sequence(Sentry.sentryHandle());
+       + export const handle = sequence(Sentry.fixwireHandle());
+     7 - export const handleError = Sentry.handleErrorWithSentry();
+       + export const handleError = Sentry.handleErrorWithFixwire();
+kit/vite.config.ts
+     1 - import { sentrySvelteKit } from "@sentry/sveltekit";
+       + import { fixwireSvelteKit as sentrySvelteKit } from "@fixwire/sveltekit";
+next/instrumentation-client.ts
+     1 - import * as Sentry from "@sentry/nextjs";
+       + import * as Sentry from "@fixwire/nextjs";
+     5 -   integrations: [Sentry.replayIntegration()],
+       +   integrations: [],
+     7 -   replaysSessionSampleRate: 0.1,
+    10 - export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+       + export const onRouterTransitionStart = Sentry.onRouterTransitionStart;
+next/instrumentation.ts
+     1 - import * as Sentry from "@sentry/nextjs";
+       + import * as Sentry from "@fixwire/nextjs";
+next/next.config.ts
+     1 - import { withSentryConfig } from "@sentry/nextjs";
+       + import { withFixwireConfig as withSentryConfig } from "@fixwire/nextjs";
+next/package.json
+     5 -     "@sentry/nextjs": "^10.20.0",
+       +     "@fixwire/nextjs": "^0.1.3",
+vue/package.json
+     6 -     "@sentry/vue": "^10.20.0",
+       +     "@fixwire/vue": "^0.1.3",
+vue/src/main.ts
+     2 - import * as Sentry from "@sentry/vue";
+       + import * as Sentry from "@fixwire/vue";
+    13 -   tracingOptions: { trackComponents: true },
+
+Left to do:
+  angular/package.json:1: install the new dependencies with your package manager (npm install, pnpm install, yarn)
+  angular/src/app/app.config.ts:9: createErrorHandler takes { logErrors } (Fixwire has no report dialog); provideFixwire() in the app's providers gives the ErrorHandler and names pages after the Router's routes
+  angular/src/app/app.config.ts:10: Sentry.TraceService isn't in @fixwire/angular: provideFixwire() in the app's providers names pages and navigations after the Router's routes; drop the TraceService provider and its initializer
+  angular/src/app/app.config.ts:12: Sentry.TraceService isn't in @fixwire/angular: provideFixwire() in the app's providers names pages and navigations after the Router's routes; drop the TraceService provider and its initializer
+  kit/package.json:1: install the new dependencies with your package manager (npm install, pnpm install, yarn)
+  kit/src/hooks.server.ts:4: SENTRY_DSN: Fixwire reads FIXWIRE_DSN; set that instead
+  kit/vite.config.ts:1: fixwireSvelteKit stamps the client build with debug ids and takes { debugIds }: drop the upload options, and upload source maps after the build with `fixwire-cli sourcemaps upload --delete build/client`
+  next/instrumentation-client.ts:4: NEXT_PUBLIC_SENTRY_DSN: Fixwire reads NEXT_PUBLIC_FIXWIRE_DSN; set that instead
+  next/instrumentation-client.ts:5: removed the replayIntegration integration: Fixwire doesn't have it (its defaults cover errors, requests and tracing)
+  next/instrumentation-client.ts:7: removed the replaysSessionSampleRate option; Fixwire's init doesn't take it: Fixwire has no session replay
+  next/next.config.ts:1: withFixwireConfig takes the Next.js config alone: drop its second argument, and upload source maps after the build with `fixwire-cli sourcemaps upload --inject --delete .next/static`
+  next/package.json:1: install the new dependencies with your package manager (npm install, pnpm install, yarn)
+  nuxt/package.json:6: @sentry/nuxt: Nuxt: depend on @fixwire/nuxt and put '@fixwire/nuxt' in nuxt.config's modules in place of '@sentry/nuxt/module'; the options sentry.client.config and sentry.server.config pass to init go in fixwire.client.config and fixwire.server.config as `export default { … }`, the DSN in nuxt.config's fixwire.dsn or NUXT_PUBLIC_FIXWIRE_DSN; in code, import from @fixwire/vue in the app and @fixwire/node on the server
+  nuxt/sentry.client.config.ts:1: @sentry/nuxt: Nuxt: depend on @fixwire/nuxt and put '@fixwire/nuxt' in nuxt.config's modules in place of '@sentry/nuxt/module'; the options sentry.client.config and sentry.server.config pass to init go in fixwire.client.config and fixwire.server.config as `export default { … }`, the DSN in nuxt.config's fixwire.dsn or NUXT_PUBLIC_FIXWIRE_DSN; in code, import from @fixwire/vue in the app and @fixwire/node on the server
+  vue/package.json:1: install the new dependencies with your package manager (npm install, pnpm install, yarn)
+  vue/src/main.ts:10: VITE_SENTRY_DSN: Fixwire reads VITE_FIXWIRE_DSN; set that instead
+  vue/src/main.ts:13: removed the tracingOptions option; Fixwire's init doesn't take it: Fixwire reports Vue's errors with their component, and doesn't trace components
+
+changed 17 places in 13 files; 17 steps left.

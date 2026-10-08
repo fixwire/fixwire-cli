@@ -1,0 +1,9 @@
+{
+  "name": "nuxt-shop",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@sentry/nuxt": "^10.20.0",
+    "nuxt": "^4.1.0"
+  }
+}

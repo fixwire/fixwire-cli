@@ -24,13 +24,14 @@ type jsFile struct {
 	reactNeed  map[string]bool     // React names the namespace alias used
 	reactAfter int                 // where to add @fixwire/react's import (-1: nowhere)
 	cjs        bool                // the namespace came from require()
+	noted      map[string]bool     // names whose jsNotes step was given
 }
 
 func migrateJS(src []byte) ([]edit, []step) {
 	f := &jsFile{
 		src: src, toks: lexJS(src), lines: newLines(src),
 		namespaces: map[string]jsTarget{}, named: map[string]jsTarget{}, dropped: map[string]string{},
-		reactNeed: map[string]bool{}, reactAfter: -1,
+		reactNeed: map[string]bool{}, reactAfter: -1, noted: map[string]bool{},
 	}
 	f.spans = make([]span, len(f.toks))
 	for i, t := range f.toks {
@@ -64,6 +65,24 @@ func (f *jsFile) step(i int, format string, args ...any) {
 		off = f.toks[i].start
 	}
 	f.steps = append(f.steps, step{line: f.lines.of(off), text: fmt.Sprintf(format, args...)})
+}
+
+// note gives name's jsNotes step, once per file.
+func (f *jsFile) note(i int, name string) {
+	if n, ok := jsNotes[name]; ok && !f.noted[name] {
+		f.noted[name] = true
+		f.step(i, "%s", n)
+	}
+}
+
+// missing reports a name the target package doesn't have (used as `used`),
+// with what replaces it when jsMissing knows.
+func (f *jsFile) missing(i int, used, name, pkg string) {
+	advice := "replace it, or drop it"
+	if a, ok := jsMissing[name]; ok {
+		advice = a
+	}
+	f.step(i, "%s isn't in %s: %s", used, pkg, advice)
 }
 
 func (f *jsFile) replace(i int, text string) {
@@ -215,8 +234,9 @@ func (f *jsFile) fromImport(i int, pkg, spec string) {
 		} else {
 			main = append(main, item)
 			if !jsExports[target.pkg][imported] && !b.typeOnly {
-				f.step(clause, "%s isn't in %s: replace it, or drop it", b.imported, target.pkg)
+				f.missing(clause, b.imported, b.imported, target.pkg)
 			}
+			f.note(clause, imported)
 		}
 		if !isExport {
 			t := target
@@ -370,8 +390,9 @@ func (f *jsFile) require(i int, pkg, spec string) {
 			f.step(j, "%s comes from @fixwire/react: require it from there", name)
 			t = jsTarget{pkg: "@fixwire/react"}
 		} else if !jsExports[target.pkg][name] {
-			f.step(j, "%s isn't in %s: replace it, or drop it", name, target.pkg)
+			f.missing(j, name, name, target.pkg)
 		}
+		f.note(j, name)
 		f.named[local] = t
 	}
 	f.replace(i, f.quoted(i, target.pkg))
@@ -421,6 +442,7 @@ func (f *jsFile) members() {
 		name := f.text(i + 2)
 		if to, ok := jsRenamed[name]; ok {
 			f.replace(i+2, to)
+			f.note(i, to)
 			continue
 		}
 		if target.react && jsReactExports[name] {
@@ -430,8 +452,9 @@ func (f *jsFile) members() {
 			continue
 		}
 		if !jsExports[target.pkg][name] && !f.inIntegrations(i) && name != "init" {
-			f.step(i, "%s.%s isn't in %s: replace it, or drop it", f.text(i), name, target.pkg)
+			f.missing(i, f.text(i)+"."+name, name, target.pkg)
 		}
+		f.note(i, name)
 	}
 }
 
@@ -639,8 +662,17 @@ func (f *jsFile) environment() {
 	}
 }
 
-// envName is the Fixwire variable for one of the incumbent's.
+// envName is the Fixwire variable for one of the incumbent's. A
+// framework's public prefix (NEXT_PUBLIC_, VITE_, PUBLIC_…) stays, as the
+// bundle reads the variable through it.
 func envName(name string) string {
+	if i := strings.Index(name, "SENTRY_"); i > 0 {
+		prefix, rest := name[:i], name[i:]
+		switch rest {
+		case "SENTRY_DSN", "SENTRY_RELEASE", "SENTRY_ENVIRONMENT":
+			return prefix + "FIXWIRE_" + strings.TrimPrefix(rest, "SENTRY_")
+		}
+	}
 	switch name {
 	case "SENTRY_DSN", "SENTRY_RELEASE", "SENTRY_ENVIRONMENT":
 		return "FIXWIRE_" + strings.TrimPrefix(name, "SENTRY_")
