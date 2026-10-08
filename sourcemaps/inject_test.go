@@ -260,3 +260,32 @@ func TestInjectRefreshesCompressedCopies(t *testing.T) {
 		t.Errorf("the gzip copy isn't the stamped file:\n%.200s", unzipped)
 	}
 }
+
+// A build whose bundler wrote debug ids (esbuild in Angular's builder,
+// Rollup's sourcemapDebugIds) gets the snippet that reports them at run
+// time, with the bundler's id; the map's columns move with it.
+func TestInjectAddsTheSnippetToBundlerDebugIDs(t *testing.T) {
+	dir := t.TempDir()
+	const bundlerID = "1998f4e9-a4f6-5bcd-8f5d-4fd90f62faf8"
+	app := writeBuild(t, dir, "main.js", `function a(b){if(!b)throw new Error("missing")}`, 0, 14)
+	src := strings.Replace(mustRead(t, app), "//# sourceMappingURL=", "//# debugId="+bundlerID+"\n//# sourceMappingURL=", 1)
+	if err := os.WriteFile(app, []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	files, err := Inject(dir)
+	if err != nil || len(files) != 1 || files[0].Already || files[0].DebugID.String() != bundlerID {
+		t.Fatalf("inject = %+v, %v", files, err)
+	}
+	got := mustRead(t, app)
+	if !strings.Contains(got, `g._fixwireDebugIds[s]="`+bundlerID+`"`) || strings.Count(got, "//# debugId=") != 1 {
+		t.Fatalf("stamped:\n%s", got)
+	}
+	shift := len(strings.Split(got, "\n")[0]) - len(`function a(b){if(!b)throw new Error("missing")}`)
+	if s, l, c := origin(t, app, 1, 14+shift); s != "src/cart.js" || l != 2 || c != 2 {
+		t.Errorf("moved code maps to %s:%d:%d", s, l, c)
+	}
+	again, err := Inject(dir)
+	if err != nil || len(again) != 1 || !again[0].Already {
+		t.Fatalf("again = %+v, %v", again, err)
+	}
+}

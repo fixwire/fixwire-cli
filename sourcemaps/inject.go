@@ -114,19 +114,26 @@ func injectFile(root, file string) (Injected, bool, error) {
 	if mapPath == "" {
 		return Injected{}, false, nil
 	}
+	id := debugIDFor(src)
+	// A bundler may have written the debug id (esbuild in Angular's builder,
+	// Rollup's sourcemapDebugIds): the file then needs only the snippet that
+	// reports it at run time.
+	bundled := false
 	if m := debugIDComment.FindSubmatch(src); m != nil {
-		id, err := uuid.Parse(string(m[1]))
+		parsed, err := uuid.Parse(string(m[1]))
 		if err != nil {
 			return Injected{}, false, err
 		}
-		// Stamped before; make sure the map carries the id too.
-		if err := stampMap(mapPath, id, -1, 0, 0); err != nil {
-			return Injected{}, false, err
+		id, bundled = parsed, true
+		if bytes.Contains(src, []byte(fmt.Sprintf(`g._fixwireDebugIds[s]="%s"`, id))) {
+			// Stamped before; make sure the map carries the id too.
+			if err := stampMap(mapPath, id, -1, 0, 0); err != nil {
+				return Injected{}, false, err
+			}
+			return Injected{File: file, Map: mapPath, DebugID: id, Already: true}, true, nil
 		}
-		return Injected{File: file, Map: mapPath, DebugID: id, Already: true}, true, nil
 	}
 
-	id := debugIDFor(src)
 	code := fmt.Sprintf(snippet, id)
 	at := insertionPoint(src)
 	line, col := position(src, at)
@@ -139,8 +146,10 @@ func injectFile(root, file string) (Injected, bool, error) {
 	b.Write(src[:at])
 	b.WriteString(code)
 	rest := src[at:]
-	// The comment goes before the sourceMappingURL comment, which stays last.
-	if loc := mapComment.FindAllIndex(rest, -1); len(loc) > 0 {
+	if bundled {
+		b.Write(rest) // the bundler's comment stays as it is
+	} else if loc := mapComment.FindAllIndex(rest, -1); len(loc) > 0 {
+		// The comment goes before the sourceMappingURL comment, which stays last.
 		last := loc[len(loc)-1][0]
 		b.Write(rest[:last])
 		fmt.Fprintf(&b, "//# debugId=%s\n", id)

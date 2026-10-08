@@ -8,6 +8,7 @@ change the commands.
 
 - `sourcemaps upload --delete` removes the source maps once they're uploaded, so they aren't deployed with the build.
 - `sourcemaps inject` keeps a build's precompressed copies in step with the files it stamps, as servers send them in their place (SvelteKit's adapter-node does): `<file>.gz` is rewritten, and `<file>.br` removed, since there is no brotli encoder in the standard library; servers fall back to the gzip copy.
+- `sourcemaps inject` adds the snippet that reports a debug id at run time to files whose bundler already wrote one (esbuild in Angular's builder, Rollup's `sourcemapDebugIds`), keeping the bundler's id; such files were taken for stamped ones, and their errors arrived without debug ids.
 
 ## [0.1.0] - 2026-10-08
 
