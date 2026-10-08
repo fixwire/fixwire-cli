@@ -4,7 +4,7 @@ All notable changes to fixwire-cli are listed here. Versions follow
 [Semantic Versioning](https://semver.org); before 1.0, a minor version may
 change the commands.
 
-## [Unreleased]
+## [0.2.0] - 2026-10-08
 
 - `migrate` moves projects on the other tracker's Next.js, Vue, SvelteKit and Angular packages to `@fixwire/nextjs`, `@fixwire/vue`, `@fixwire/sveltekit` and `@fixwire/angular` (its Svelte package to `@fixwire/browser`), renames the Next.js config wrapper, the router transition hook, SvelteKit's `handleError` wrapper, `handle` hook and Vite plugin, and says what changed where a call takes less (the config wrapper's second argument, the Vite plugin's upload options, Angular's report dialog) and what replaces what Fixwire lacks (Angular's `TraceService`: `provideFixwire()`). Nuxt gets precise steps: the module, the config files, the DSN. Environment variables keep a framework's public prefix (`NEXT_PUBLIC_FIXWIRE_DSN`, `VITE_FIXWIRE_DSN`).
 - `sourcemaps upload --delete` removes the source maps once they're uploaded, so they aren't deployed with the build.
