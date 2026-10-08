@@ -1,12 +1,12 @@
 angular/package.json
      7 -     "@sentry/angular": "^10.20.0"
-       +     "@fixwire/angular": "^0.2.0"
+       +     "@fixwire/angular": "^0.2.1"
 angular/src/app/app.config.ts
      3 - import * as Sentry from "@sentry/angular";
        + import * as Sentry from "@fixwire/angular";
 kit/package.json
      6 -     "@sentry/sveltekit": "^10.20.0",
-       +     "@fixwire/sveltekit": "^0.2.0",
+       +     "@fixwire/sveltekit": "^0.2.1",
 kit/src/hooks.server.ts
      1 - import * as Sentry from "@sentry/sveltekit";
        + import * as Sentry from "@fixwire/sveltekit";
@@ -33,10 +33,10 @@ next/next.config.ts
        + import { withFixwireConfig as withSentryConfig } from "@fixwire/nextjs";
 next/package.json
      5 -     "@sentry/nextjs": "^10.20.0",
-       +     "@fixwire/nextjs": "^0.2.0",
+       +     "@fixwire/nextjs": "^0.2.1",
 vue/package.json
      6 -     "@sentry/vue": "^10.20.0",
-       +     "@fixwire/vue": "^0.2.0",
+       +     "@fixwire/vue": "^0.2.1",
 vue/src/main.ts
      2 - import * as Sentry from "@sentry/vue";
        + import * as Sentry from "@fixwire/vue";

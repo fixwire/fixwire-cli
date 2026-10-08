@@ -7,9 +7,9 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@fixwire/node": "^0.2.0",
-    "@fixwire/browser": "^0.2.0",
-    "@fixwire/react": "^0.2.0",
+    "@fixwire/node": "^0.2.1",
+    "@fixwire/browser": "^0.2.1",
+    "@fixwire/react": "^0.2.1",
     "express": "^5.1.0",
     "react": "^19.1.0"
   },

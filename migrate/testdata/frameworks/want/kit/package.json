@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@fixwire/sveltekit": "^0.2.0",
+    "@fixwire/sveltekit": "^0.2.1",
     "@sveltejs/kit": "^2.40.0"
   }
 }

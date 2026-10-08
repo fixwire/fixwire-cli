@@ -4,6 +4,6 @@
   "dependencies": {
     "@angular/core": "^20.0.0",
     "@angular/router": "^20.0.0",
-    "@fixwire/angular": "^0.2.0"
+    "@fixwire/angular": "^0.2.1"
   }
 }
