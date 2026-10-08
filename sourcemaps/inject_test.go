@@ -246,12 +246,11 @@ func TestInjectRefreshesCompressedCopies(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(dir, "app.js.br")); !os.IsNotExist(err) {
 		t.Error("the out-of-date brotli copy is still there")
 	}
-	f, err := os.Open(filepath.Join(dir, "app.js.gz"))
+	zipped, err := os.ReadFile(filepath.Join(dir, "app.js.gz"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
-	r, err := gzip.NewReader(f)
+	r, err := gzip.NewReader(bytes.NewReader(zipped))
 	if err != nil {
 		t.Fatal(err)
 	}
